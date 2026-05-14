@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EX3400 Config Converter</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0f14;
+      --panel: #111820;
+      --panel-2: #151f2a;
+      --panel-3: #0f151d;
+      --ink: #eef4f8;
+      --muted: #95a7b7;
+      --line: #263544;
+      --accent: #35c2a2;
+      --accent-2: #67a7ff;
+      --danger: #ffbd6b;
+      --danger-bg: #2a1d10;
+      --code: #070a0e;
+      --field: #0c1219;
+      --shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(53, 194, 162, 0.08), transparent 260px),
+        var(--bg);
+      color: var(--ink);
+      font: 14px/1.45 "Segoe UI", Arial, sans-serif;
+    }
+    button, input, select, textarea { font: inherit; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(11, 15, 20, 0.92);
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      backdrop-filter: blur(10px);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .mark {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      color: #06110f;
+      background: var(--accent);
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 18px; line-height: 1.2; }
+    .subtitle { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      max-width: 820px;
+    }
+    main {
+      width: min(1680px, calc(100vw - 28px));
+      margin: 14px auto 28px;
+      display: grid;
+      grid-template-columns: minmax(380px, 0.86fr) minmax(520px, 1.14fr);
+      gap: 14px;
+    }
+    section {
+      min-width: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .panel-head {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-2);
+    }
+    h2 { font-size: 14px; }
+    form {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 138px;
+      gap: 10px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 122px 126px;
+      gap: 10px;
+    }
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    select, input, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--field);
+      color: var(--ink);
+      outline: none;
+    }
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(53, 194, 162, 0.14);
+    }
+    select, input {
+      height: 38px;
+      padding: 0 10px;
+    }
+    textarea {
+      min-height: 58vh;
+      padding: 12px;
+      resize: vertical;
+      font: 12px/1.45 Consolas, "Courier New", monospace;
+      tab-size: 2;
+    }
+    .checks {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .stacked {
+      display: grid;
+      gap: 10px;
+    }
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel-3);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .check input { width: 16px; height: 16px; accent-color: var(--accent); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel-3);
+      color: var(--ink);
+      padding: 8px 12px;
+      font-weight: 750;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .btn:hover { border-color: var(--accent-2); }
+    .primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #06110f;
+    }
+    .primary:hover { filter: brightness(1.05); border-color: var(--accent); }
+    .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: var(--panel-3);
+    }
+    .result {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      min-height: 68vh;
+    }
+    pre {
+      margin: 0;
+      min-height: 52vh;
+      max-height: 72vh;
+      overflow: auto;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--code);
+      color: #e8f5f2;
+      font: 12px/1.45 Consolas, "Courier New", monospace;
+      white-space: pre;
+    }
+    .empty {
+      display: grid;
+      place-items: center;
+      min-height: 68vh;
+      color: var(--muted);
+      text-align: center;
+      padding: 26px;
+    }
+    details {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-3);
+      overflow: hidden;
+    }
+    summary {
+      cursor: pointer;
+      padding: 10px 12px;
+      font-weight: 750;
+      color: var(--ink);
+    }
+    details > div { padding: 0 12px 12px; color: var(--muted); }
+    .warnings {
+      border-color: #694a20;
+      background: var(--danger-bg);
+    }
+    .warnings summary { color: var(--danger); }
+    ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+    li + li { margin-top: 4px; }
+    code {
+      color: #b9e8ff;
+      background: rgba(103, 167, 255, 0.1);
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+    .templates {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .compact-area {
+      min-height: 86px;
+      max-height: 170px;
+    }
+    .batch-box {
+      margin: 0 14px 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-3);
+      display: grid;
+      gap: 10px;
+    }
+    .report-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px;
+      background: var(--field);
+    }
+    .metric strong {
+      display: block;
+      font-size: 18px;
+      color: var(--accent);
+    }
+    .matched {
+      display: grid;
+      gap: 6px;
+      max-height: 320px;
+      overflow: auto;
+    }
+    .match-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px;
+      border-top: 1px solid var(--line);
+      padding-top: 6px;
+    }
+    .match-row pre {
+      min-height: auto;
+      max-height: 90px;
+      padding: 8px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+    }
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      transform: translateY(18px);
+      opacity: 0;
+      pointer-events: none;
+      transition: 160ms ease;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--ink);
+      border-radius: 8px;
+      padding: 10px 12px;
+      box-shadow: var(--shadow);
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    @media (max-width: 1050px) {
+      main { grid-template-columns: 1fr; }
+      textarea { min-height: 42vh; }
+      header { align-items: flex-start; flex-direction: column; }
+      .header-actions { justify-content: flex-start; }
+    }
+    @media (max-width: 700px) {
+      .grid-2, .grid-3, .checks { grid-template-columns: 1fr; }
+      main { width: min(100vw - 16px, 1680px); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="mark">EX</div>
+      <div>
+        <h1>EX3400 Config Converter</h1>
+        <p class="subtitle">Multi-vendor migration workspace for Junos set output</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn" type="button" data-sample="cisco">Cisco sample</button>
+      <button class="btn" type="button" data-sample="brocade">Brocade sample</button>
+      <button class="btn" type="button" data-sample="checkpoint">Check Point sample</button>
+      <button class="btn" type="button" data-sample="ex3200">EX3200 sample</button>
+      <button class="btn" type="button" data-sample="ex4200">EX4200 sample</button>
+      <button class="btn" type="button" data-sample="m7i">M7i sample</button>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <div class="panel-head">
+        <h2>Source</h2>
+        <span class="pill">EX3400-24P target</span>
+      </div>
+      <form method="post" id="convertForm">
+        <div class="grid-2">
+          <label>
+            Platform
+            <select name="platform" id="platform">
+              {% for key, label in platforms.items() %}
+                <option value="{{ key }}" {% if key == selected_platform %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            Stack members
+            <input id="stackMembers" name="stack_members" type="number" min="1" max="10" value="{{ stack_members }}">
+          </label>
+        </div>
+
+        <div class="grid-3">
+          <label>
+            Hostname suffix
+            <input name="hostname_suffix" value="{{ hostname_suffix }}">
+          </label>
+          <label>
+            Output
+            <select name="output_mode">
+              <option selected>Junos set</option>
+            </select>
+          </label>
+          <label>
+            Target model
+            <select name="target_model" id="targetModel">
+              {% for key, target in target_models.items() %}
+                <option value="{{ key }}" {% if key == selected_target_model %}selected{% endif %}>{{ target.label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Standard profile
+          <select name="template_profile" id="templateProfile">
+            {% for key, profile in template_profiles.items() %}
+              <option value="{{ key }}" {% if key == selected_template_profile %}selected{% endif %}>{{ profile.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <div class="checks">
+          <label class="check">
+            <input type="checkbox" name="include_load_hint" {% if include_load_hint %}checked{% endif %}>
+            Add load set helper
+          </label>
+          <label class="check">
+            <input type="checkbox" name="strip_review_comments" {% if strip_review_comments %}checked{% endif %}>
+            Hide review comments
+          </label>
+        </div>
+
+        <label>
+          Device config
+          <textarea id="sourceConfig" name="source_config" spellcheck="false" placeholder="Paste show run, show configuration, Gaia CLI output, Brocade config, or Ciena SAOS config here">{{ source_config }}</textarea>
+        </label>
+
+        <label>
+          Port overrides
+          <textarea class="compact-area" id="portOverrides" name="port_overrides" spellcheck="false" placeholder="Optional. One per line: source_port = target_port&#10;Example: GigabitEthernet1/0/1 = ge-0/0/10">{{ port_overrides }}</textarea>
+        </label>
+
+        <div class="actions">
+          <button class="btn primary" type="submit">Convert</button>
+          <button class="btn" type="button" id="clearSource">Clear</button>
+        </div>
+      </form>
+
+      <form class="batch-box" id="batchForm" method="post" action="/batch" enctype="multipart/form-data">
+        <h2>Batch Convert</h2>
+        <input type="hidden" id="batchPlatform" name="platform" value="{{ selected_platform }}">
+        <input type="hidden" id="batchTargetModel" name="target_model" value="{{ selected_target_model }}">
+        <input type="hidden" id="batchStackMembers" name="stack_members" value="{{ stack_members }}">
+        <input type="hidden" id="batchHostnameSuffix" name="hostname_suffix" value="{{ hostname_suffix }}">
+        <input type="hidden" id="batchTemplateProfile" name="template_profile" value="{{ selected_template_profile }}">
+        <input type="hidden" id="batchLoadHint" name="include_load_hint" value="{% if include_load_hint %}on{% endif %}">
+        <input type="hidden" id="batchStripReview" name="strip_review_comments" value="{% if strip_review_comments %}on{% endif %}">
+        <label>
+          Config files
+          <input type="file" name="config_files" multiple>
+        </label>
+        <button class="btn" type="submit">Download batch zip</button>
+      </form>
+    </section>
+
+    <section>
+      <div class="panel-head">
+        <h2>Output</h2>
+        {% if result and stats %}
+          <div class="stats">
+            <span class="pill">{{ stats.set_lines }} set lines</span>
+            <span class="pill">{{ stats.review_lines }} review</span>
+            <span class="pill">{{ stats.ports }} ports</span>
+            <span class="pill">{{ stats.warnings }} warnings</span>
+          </div>
+        {% endif %}
+      </div>
+
+      {% if result %}
+        <div class="result">
+          <div class="actions">
+            <button class="btn primary" type="button" id="copyOutput">Copy output</button>
+            <button class="btn" type="button" id="downloadOutput">Download .conf</button>
+            <button class="btn" type="button" id="downloadMapping">Download mapping CSV</button>
+            <button class="btn" type="button" id="downloadReport">Download report JSON</button>
+            <span class="pill">Detected: {{ platforms.get(result.platform, result.platform) }}</span>
+          </div>
+
+          {% if report %}
+            <details open>
+              <summary>Migration report</summary>
+              <div>
+                <div class="report-grid">
+                  <div class="metric"><strong>{{ report.counts.set_lines }}</strong>set lines</div>
+                  <div class="metric"><strong>{{ report.counts.vlans }}</strong>VLANs</div>
+                  <div class="metric"><strong>{{ report.counts.irbs }}</strong>IRBs</div>
+                  <div class="metric"><strong>{{ report.counts.static_routes }}</strong>static routes</div>
+                </div>
+                <h3>Validation</h3>
+                <ul>
+                  {% for item in report.validations %}
+                    <li><code>{{ item.severity }}</code> {{ item.message }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </details>
+          {% endif %}
+
+          {% if result.warnings %}
+            <details class="warnings" open>
+              <summary>Review before commit</summary>
+              <div>
+                <ul>
+                  {% for warning in result.warnings %}
+                    <li>{{ warning }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </details>
+          {% endif %}
+
+          {% if result.source_to_target_ports %}
+            <details>
+              <summary>Port mapping</summary>
+              <div>
+                <ul>
+                  {% for source, target in result.source_to_target_ports.items() %}
+                    <li><code>{{ source }}</code> to <code>{{ target }}</code></li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </details>
+          {% endif %}
+
+          {% if report and report.categories %}
+            <details>
+              <summary>Review categories</summary>
+              <div>
+                {% for category, items in report.categories.items() %}
+                  <h3>{{ category.replace("_", " ").title() }}</h3>
+                  <ul>
+                    {% for item in items[:12] %}
+                      <li>{{ item }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endfor %}
+              </div>
+            </details>
+          {% endif %}
+
+          {% if matched_view %}
+            <details>
+              <summary>Source to output view</summary>
+              <div class="matched">
+                {% for pair in matched_view[:50] %}
+                  <div class="match-row">
+                    <pre>{{ pair.source }}</pre>
+                    <pre>{{ pair.output }}</pre>
+                  </div>
+                {% endfor %}
+              </div>
+            </details>
+          {% endif %}
+
+          <pre id="outputConfig">{{ output_config }}</pre>
+          <script type="application/json" id="reportJson">{{ report|tojson }}</script>
+          <pre id="mappingCsv" hidden>{{ mapping_csv }}</pre>
+        </div>
+      {% else %}
+        <div class="empty">
+          <div>
+            <h2>Ready</h2>
+            <p class="subtitle">Paste a config, pick a platform, and convert.</p>
+          </div>
+        </div>
+      {% endif %}
+    </section>
+  </main>
+
+  <div class="toast" id="toast">Copied</div>
+
+  <script>
+    const samples = {
+      cisco: {
+        platform: "cisco_ios",
+        text: `hostname SW1
+vlan 10
+ name USERS
+vlan 20
+ name VOICE
+interface GigabitEthernet1/0/1
+ description User jack
+ switchport mode access
+ switchport access vlan 10
+interface GigabitEthernet1/0/2
+ switchport mode trunk
+ switchport trunk native vlan 10
+ switchport trunk allowed vlan 10,20
+interface Vlan10
+ ip address 10.10.10.1 255.255.255.0
+ip route 0.0.0.0 0.0.0.0 10.10.10.254`
+      },
+      brocade: {
+        platform: "brocade",
+        text: `hostname BR1
+ip router-id 192.0.2.10
+vlan 100 name USERS
+ tagged ethe 1 to 2
+ untagged ethe 25
+ router-interface ve 100
+!
+interface ethernet 1
+ port-name Uplink Core
+!
+interface ve 100
+ ip address 10.100.0.1 255.255.255.0
+ ip ospf area 0.0.0.0
+ ip ospf cost 5
+!
+ip route 0.0.0.0 0.0.0.0 10.100.0.254`
+      },
+      checkpoint: {
+        platform: "checkpoint",
+        text: `set hostname CP-GW1
+set interface Mgmt ipv4-address 10.0.0.10 mask-length 24
+set interface Mgmt comments "Management"
+set interface eth1 comments "inside"
+add interface eth1 vlan 100
+set interface eth1.100 ipv4-address 172.16.100.1 mask-length 24
+set static-route default nexthop gateway address 10.0.0.1 on
+set ospf instance default interface eth1 area backbone on
+set bgp external remote-as 65001 peer 203.0.113.2 on`
+      },
+      ex3200: {
+        platform: "juniper_ex3200",
+        targetModel: "ex3400_24p",
+        stackMembers: 1,
+        text: `set system host-name EX3200-A
+set vlans DATA vlan-id 200
+set vlans DATA l3-interface vlan.200
+set interfaces ge-0/0/1 description user_access
+set interfaces ge-0/0/1 unit 0 family ethernet-switching port-mode access
+set interfaces ge-0/0/1 unit 0 family ethernet-switching vlan members DATA
+set interfaces vlan unit 200 family inet address 10.200.0.1/24
+set protocols ospf area 0.0.0.0 interface vlan.200`
+      },
+      ex4200: {
+        platform: "juniper_ex4200",
+        targetModel: "ex3400_24p_stack",
+        stackMembers: 2,
+        text: `set system host-name EX4200-A
+set vlans USERS vlan-id 10
+set interfaces ge-0/0/24 description second_member_user
+set interfaces ge-0/0/24 unit 0 family ethernet-switching port-mode access
+set interfaces ge-0/0/24 unit 0 family ethernet-switching vlan members USERS
+set interfaces ge-0/0/47 description far_end_access
+set interfaces ge-0/0/47 unit 0 family ethernet-switching port-mode trunk
+set interfaces ge-0/0/47 unit 0 family ethernet-switching vlan members USERS`
+      },
+      m7i: {
+        platform: "juniper_m7i",
+        targetModel: "ex3400_24p",
+        stackMembers: 1,
+        text: `set system host-name M7I-EDGE
+set routing-options static route 0.0.0.0/0 next-hop 203.0.113.1
+set interfaces ge-0/0/0 description wan_handoff
+set interfaces ge-0/0/0 unit 0 family inet address 203.0.113.2/30
+set protocols ospf area 0.0.0.0 interface ge-0/0/0.0
+set snmp community public authorization read-only`
+      }
+    };
+
+    const toast = document.getElementById("toast");
+    const showToast = (message) => {
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 1400);
+    };
+
+    document.querySelectorAll("[data-sample]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const sample = samples[button.dataset.sample];
+        document.getElementById("sourceConfig").value = sample.text;
+        document.getElementById("platform").value = sample.platform;
+        if (sample.targetModel) {
+          document.getElementById("targetModel").value = sample.targetModel;
+        }
+        if (sample.stackMembers) {
+          document.getElementById("stackMembers").value = sample.stackMembers;
+        }
+      });
+    });
+
+    document.getElementById("clearSource")?.addEventListener("click", () => {
+      document.getElementById("sourceConfig").value = "";
+      document.getElementById("portOverrides").value = "";
+      document.getElementById("sourceConfig").focus();
+    });
+
+    document.getElementById("targetModel")?.addEventListener("change", (event) => {
+      const stackMembers = document.getElementById("stackMembers");
+      if (event.target.value === "ex3400_24p_stack" && Number(stackMembers.value) < 2) {
+        stackMembers.value = 2;
+      }
+    });
+
+    document.getElementById("batchForm")?.addEventListener("submit", () => {
+      document.getElementById("batchPlatform").value = document.getElementById("platform").value;
+      document.getElementById("batchTargetModel").value = document.getElementById("targetModel").value;
+      document.getElementById("batchStackMembers").value = document.getElementById("stackMembers").value;
+      document.getElementById("batchHostnameSuffix").value = document.querySelector("[name='hostname_suffix']").value;
+      document.getElementById("batchTemplateProfile").value = document.getElementById("templateProfile").value;
+      document.getElementById("batchLoadHint").value = document.querySelector("[name='include_load_hint']").checked ? "on" : "";
+      document.getElementById("batchStripReview").value = document.querySelector("[name='strip_review_comments']").checked ? "on" : "";
+    });
+
+    document.getElementById("copyOutput")?.addEventListener("click", async () => {
+      const text = document.getElementById("outputConfig").innerText;
+      await navigator.clipboard.writeText(text);
+      showToast("Output copied");
+    });
+
+    document.getElementById("downloadOutput")?.addEventListener("click", () => {
+      const text = document.getElementById("outputConfig").innerText;
+      downloadText("ex3400_converted.conf", text, "text/plain");
+      showToast("Download started");
+    });
+
+    document.getElementById("downloadMapping")?.addEventListener("click", () => {
+      const text = document.getElementById("mappingCsv").innerText;
+      downloadText("ex3400_port_mapping.csv", text, "text/csv");
+      showToast("Mapping downloaded");
+    });
+
+    document.getElementById("downloadReport")?.addEventListener("click", () => {
+      const text = document.getElementById("reportJson").textContent;
+      downloadText("ex3400_migration_report.json", JSON.stringify(JSON.parse(text), null, 2), "application/json");
+      showToast("Report downloaded");
+    });
+
+    function downloadText(filename, text, type) {
+      const blob = new Blob([text], { type });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+  </script>
+</body>
+</html>
