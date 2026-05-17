@@ -62,6 +62,7 @@ def process_conversion(
     redact_secrets: bool = True,
 ) -> dict[str, Any]:
     result = convert_config(source_config, platform, stack_members, hostname_suffix, target_model)
+    result = add_input_format_warnings(result, source_config)
     result = apply_port_overrides(result, parse_port_overrides(port_overrides_text))
     profiled_config = apply_template_profile(result.config, template_profile)
     output_config = prepare_output(profiled_config, strip_review_comments, include_load_hint, redact_secrets)
@@ -74,6 +75,29 @@ def process_conversion(
         "mapping_csv": build_mapping_csv(result.source_to_target_ports),
         "matched_view": build_matched_view(redact_sensitive_values(source_config) if redact_secrets else source_config, output_config),
     }
+
+
+def add_input_format_warnings(result: ConversionResult, source_config: str) -> ConversionResult:
+    warning = detect_input_format_warning(source_config)
+    if not warning or warning in result.warnings:
+        return result
+    return replace(result, warnings=[warning] + list(result.warnings))
+
+
+def detect_input_format_warning(source_config: str) -> str | None:
+    stripped_lines = [line.strip().lstrip("\ufeff") for line in source_config.splitlines() if line.strip()]
+    if not stripped_lines:
+        return None
+    has_set_lines = any(line.startswith("set ") for line in stripped_lines[:40])
+    has_junos_hierarchy = any(line.endswith("{") for line in stripped_lines[:80]) and any(
+        line in {"system {", "interfaces {", "routing-options {", "protocols {"} for line in stripped_lines[:80]
+    )
+    if has_junos_hierarchy and not has_set_lines:
+        return (
+            "Input appears to be hierarchical Junos. Please paste Junos set commands when possible "
+            "(for example, use `show configuration | display set`) to make the conversion more accurate."
+        )
+    return None
 
 
 def prepare_output(

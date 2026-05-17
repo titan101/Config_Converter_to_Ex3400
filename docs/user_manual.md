@@ -112,6 +112,14 @@ http://127.0.0.1:5050
 7. Review warnings, validation results, and the generated `set` commands.
 8. Use **Copy output**, **Download .conf**, **Download mapping CSV**, or **Download report JSON**.
 
+For Juniper devices, paste `set` format whenever possible:
+
+```text
+show configuration | display set
+```
+
+Hierarchical Junos input is accepted as a fallback, but the app displays a warning because `set` commands are more predictable for conversion.
+
 ## Sample Buttons
 
 The sample buttons populate safe demo configs:

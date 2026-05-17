@@ -4,6 +4,8 @@ Local Python app for converting pasted legacy network configurations into Junipe
 
 Full documentation with screenshots: [docs/user_manual.md](docs/user_manual.md)
 
+For Juniper devices, paste `show configuration | display set` output when possible. Hierarchical Junos input is accepted as a fallback, but the app will warn that `set` commands produce better conversions.
+
 ## Run
 
 ### Windows

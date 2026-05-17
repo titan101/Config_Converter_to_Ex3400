@@ -8,6 +8,7 @@ from services import (
     build_mapping_csv,
     build_report,
     build_project_zip,
+    detect_input_format_warning,
     parse_port_overrides,
     redact_sensitive_values,
 )
@@ -105,3 +106,24 @@ def test_project_zip_can_exclude_or_include_source():
     with_source = build_project_zip("source", "set system services ssh\n", "", report, include_source=True)
     with zipfile.ZipFile(with_source) as archive:
         assert "source_config.txt" in archive.namelist()
+
+
+def test_hierarchical_junos_warning_prefers_display_set():
+    warning = detect_input_format_warning("system {\n host-name MX204;\n}\ninterfaces {\n}\n")
+    assert warning
+    assert "display set" in warning
+    assert detect_input_format_warning("set system host-name MX204\n") is None
+
+
+def test_web_conversion_shows_hierarchical_junos_warning():
+    client = app.test_client()
+    response = client.post(
+        "/",
+        data={
+            "source_config": "system {\n host-name MX204;\n}\ninterfaces {\n xe-0/0/0 { unit 0 { family inet { address 198.51.100.1/31; } } }\n}\n",
+            "platform": "auto",
+            "redact_secrets": "on",
+        },
+    )
+    assert response.status_code == 200
+    assert b"Please paste Junos set commands" in response.data
