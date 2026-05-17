@@ -1,13 +1,15 @@
 import io
 import zipfile
 
-from app import (
-    app,
+from app import app
+from services import (
     apply_port_overrides,
     apply_template_profile,
     build_mapping_csv,
     build_report,
+    build_project_zip,
     parse_port_overrides,
+    redact_sensitive_values,
 )
 from converter import convert_config
 
@@ -61,3 +63,45 @@ def test_batch_convert_endpoint_returns_zip():
         assert "sw1/migration_report.json" in names
         assert "batch_index.json" in names
         assert "set system host-name SW1-EX3400" in archive.read("sw1/converted_ex3400.conf").decode()
+        assert "sw1/source_config.txt" not in names
+
+
+def test_secret_redaction_masks_snmp_and_authentication_key():
+    config = """
+set snmp community public authorization read-only
+snmp-server community private RW
+set protocols bgp group EBGP neighbor 203.0.113.2 authentication-key "secret123"
+"""
+    redacted = redact_sensitive_values(config)
+    assert "public" not in redacted
+    assert "private" not in redacted
+    assert "secret123" not in redacted
+    assert "<redacted-community>" in redacted
+    assert '"<redacted>"' in redacted
+
+
+def test_api_convert_returns_report_and_redacted_output():
+    client = app.test_client()
+    response = client.post(
+        "/api/convert",
+        json={
+            "source_config": "snmp-server community public RO\n",
+            "platform": "cisco_ios",
+            "redact_secrets": True,
+        },
+    )
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["report"]["app_version"]
+    assert "public" not in payload["config"]
+    assert "<redacted-community>" in payload["config"]
+
+
+def test_project_zip_can_exclude_or_include_source():
+    report = {"counts": {}, "validations": []}
+    no_source = build_project_zip("secret source", "set system services ssh\n", "", report, include_source=False)
+    with zipfile.ZipFile(no_source) as archive:
+        assert "source_config.txt" not in archive.namelist()
+    with_source = build_project_zip("source", "set system services ssh\n", "", report, include_source=True)
+    with zipfile.ZipFile(with_source) as archive:
+        assert "source_config.txt" in archive.namelist()

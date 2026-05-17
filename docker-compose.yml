@@ -1,0 +1,9 @@
+services:
+  config-converter:
+    build: .
+    ports:
+      - "5050:5050"
+    environment:
+      CONFIG_CONVERT_HOST: 0.0.0.0
+      CONFIG_CONVERT_PORT: 5050
+      CONFIG_CONVERT_OPEN_BROWSER: 0

@@ -349,7 +349,7 @@
       <div class="mark">EX</div>
       <div>
         <h1>EX3400 Config Converter</h1>
-        <p class="subtitle">Multi-vendor migration workspace for Junos set output</p>
+        <p class="subtitle">Multi-vendor migration workspace for Junos set output · v{{ app_version }}</p>
       </div>
     </div>
     <div class="header-actions">
@@ -423,6 +423,14 @@
             <input type="checkbox" name="strip_review_comments" {% if strip_review_comments %}checked{% endif %}>
             Hide review comments
           </label>
+          <label class="check">
+            <input type="checkbox" name="redact_secrets" {% if redact_secrets %}checked{% endif %}>
+            Redact secrets
+          </label>
+          <label class="check">
+            <input type="checkbox" name="include_source_in_exports" {% if include_source_in_exports %}checked{% endif %}>
+            Include source in zips
+          </label>
         </div>
 
         <label>
@@ -437,6 +445,7 @@
 
         <div class="actions">
           <button class="btn primary" type="submit">Convert</button>
+          <button class="btn" type="submit" formaction="/bundle" formmethod="post">Download project zip</button>
           <button class="btn" type="button" id="clearSource">Clear</button>
         </div>
       </form>
@@ -450,6 +459,8 @@
         <input type="hidden" id="batchTemplateProfile" name="template_profile" value="{{ selected_template_profile }}">
         <input type="hidden" id="batchLoadHint" name="include_load_hint" value="{% if include_load_hint %}on{% endif %}">
         <input type="hidden" id="batchStripReview" name="strip_review_comments" value="{% if strip_review_comments %}on{% endif %}">
+        <input type="hidden" id="batchRedactSecrets" name="redact_secrets" value="{% if redact_secrets %}on{% endif %}">
+        <input type="hidden" id="batchIncludeSource" name="include_source_in_exports" value="{% if include_source_in_exports %}on{% endif %}">
         <label>
           Config files
           <input type="file" name="config_files" multiple>
@@ -479,6 +490,7 @@
             <button class="btn" type="button" id="downloadMapping">Download mapping CSV</button>
             <button class="btn" type="button" id="downloadReport">Download report JSON</button>
             <span class="pill">Detected: {{ platforms.get(result.platform, result.platform) }}</span>
+            <span class="pill">Secrets {% if redact_secrets %}redacted{% else %}visible{% endif %}</span>
           </div>
 
           {% if report %}
@@ -490,6 +502,8 @@
                   <div class="metric"><strong>{{ report.counts.vlans }}</strong>VLANs</div>
                   <div class="metric"><strong>{{ report.counts.irbs }}</strong>IRBs</div>
                   <div class="metric"><strong>{{ report.counts.static_routes }}</strong>static routes</div>
+                  <div class="metric"><strong>{{ report.counts.validation_errors }}</strong>validation errors</div>
+                  <div class="metric"><strong>{{ report.counts.validation_warnings }}</strong>validation warnings</div>
                 </div>
                 <h3>Validation</h3>
                 <ul>
@@ -500,6 +514,17 @@
               </div>
             </details>
           {% endif %}
+
+          <details>
+            <summary>Automation API</summary>
+            <div>
+              <ul>
+                <li><code>GET /api/platforms</code> lists supported platforms, targets, and profiles.</li>
+                <li><code>POST /api/convert</code> accepts JSON with <code>source_config</code>, <code>platform</code>, <code>target_model</code>, and returns config/report/mapping.</li>
+                <li><code>POST /api/validate</code> returns only the report and validation findings.</li>
+              </ul>
+            </div>
+          </details>
 
           {% if result.warnings %}
             <details class="warnings" open>
@@ -707,6 +732,8 @@ set snmp community public authorization read-only`
       document.getElementById("batchTemplateProfile").value = document.getElementById("templateProfile").value;
       document.getElementById("batchLoadHint").value = document.querySelector("[name='include_load_hint']").checked ? "on" : "";
       document.getElementById("batchStripReview").value = document.querySelector("[name='strip_review_comments']").checked ? "on" : "";
+      document.getElementById("batchRedactSecrets").value = document.querySelector("[name='redact_secrets']").checked ? "on" : "";
+      document.getElementById("batchIncludeSource").value = document.querySelector("[name='include_source_in_exports']").checked ? "on" : "";
     });
 
     document.getElementById("copyOutput")?.addEventListener("click", async () => {

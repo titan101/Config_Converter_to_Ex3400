@@ -59,6 +59,12 @@ python -m pip install -r requirements.txt
 python app.py
 ```
 
+Docker run:
+
+```bash
+docker compose up --build
+```
+
 ## App Features
 
 - Dark-mode web UI
@@ -67,15 +73,19 @@ python app.py
 - Target model, stack member, and hostname suffix controls
 - Pure Junos `set` command output
 - Optional `load set terminal` helper comments above the set commands
+- Default-on secret redaction for SNMP communities, authentication keys, passwords, and secrets
 - Optional hiding of `# REVIEW` comments
 - Copy and download actions for generated configs
 - Output counts for set lines, review lines, warnings, and port mappings
-- Batch upload that exports a zip with converted configs, mapping CSVs, source files, and JSON reports
+- Batch upload that exports a zip with converted configs, mapping CSVs, JSON reports, and optional source files
 - Port mapping overrides such as `old_port = ge-0/0/10`
 - Migration report with counts, validation findings, and review categories
 - Mapping CSV and report JSON downloads
 - Source-to-output matched view for quick review
 - Standard profile injection for common ops/turn-up baseline settings
+- JSON automation endpoints for platforms, conversion, and validation
+- Docker and Docker Compose support for WSL/Linux/containerized runs
+- GitHub Actions CI for tests and compile checks
 
 ## CLI
 
@@ -87,6 +97,30 @@ WSL/Linux CLI:
 
 ```bash
 python3 converter.py old_switch.txt --platform cisco_ios --stack-members 2 --target-model ex3400_24p_stack --output converted_ex3400.conf
+```
+
+## API
+
+List supported inputs:
+
+```bash
+curl http://127.0.0.1:5050/api/platforms
+```
+
+Convert a config:
+
+```bash
+curl -X POST http://127.0.0.1:5050/api/convert \
+  -H "Content-Type: application/json" \
+  -d '{"platform":"cisco_ios","source_config":"hostname SW1\n","redact_secrets":true}'
+```
+
+Validate/report only:
+
+```bash
+curl -X POST http://127.0.0.1:5050/api/validate \
+  -H "Content-Type: application/json" \
+  -d '{"platform":"cisco_ios","source_config":"hostname SW1\n"}'
 ```
 
 ## What It Converts
@@ -106,6 +140,10 @@ python3 converter.py old_switch.txt --platform cisco_ios --stack-members 2 --tar
 ## Important
 
 This is a migration assistant, not a blind paste-and-commit tool. Review every generated warning before loading the config on production equipment. Some source features do not exist on an EX3400-24P or require design choices that software cannot safely infer.
+
+Secret redaction is enabled by default in the web app and API. Turn it off only when you intentionally need the generated output to preserve source secrets.
+
+See `docs/research_recommendations.md` for the research-backed improvement list used to guide the current app structure.
 
 This public repository is intended as a read-only published project. Open a fork for outside experiments rather than pushing directly to the main repository.
 
