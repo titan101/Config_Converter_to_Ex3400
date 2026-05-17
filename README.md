@@ -145,7 +145,7 @@ curl -X POST http://127.0.0.1:5050/api/validate \
 - Legacy EX4200 Junos: EX4200 access-port configs map to EX3400-24P stacks or EX3400-48-port targets, with `port-mode` converted to ELS `interface-mode`.
 - Legacy EX4500 Junos: EX4500 `xe-*` physical interfaces are auto-assigned to target EX3400 ports and flagged for optics/speed review.
 - Juniper M7i Junos: compatible system, routing, SNMP, and interface address lines with physical ports auto-assigned to EX3400 ports.
-- Juniper MX104 Junos: compatible routing, SNMP, and interface address lines with physical ports auto-assigned to EX3400 ports and MX-only feature warnings.
+- Juniper MX104/MX204/MX304 Junos: compatible routing, SNMP, BGP, policy, system, and interface address lines with physical ports auto-assigned to EX3400 ports and MX-only feature warnings.
 - Ciena 3920/3930 SAOS basics: VLANs, tagged/untagged port hints, static routes, hostname, and review comments for platform-specific lines.
 - Ciena ring/protection detection: preserves `ring-protection`, ERPS, R-APS/RAPS, logical/virtual ring, east/west port, control VLAN, RPL, and timer-related lines as EX3400 review comments with any auto-mapped ports shown.
 

@@ -359,6 +359,7 @@
       <button class="btn" type="button" data-sample="ex3200">EX3200 sample</button>
       <button class="btn" type="button" data-sample="ex4200">EX4200 sample</button>
       <button class="btn" type="button" data-sample="m7i">M7i sample</button>
+      <button class="btn" type="button" data-sample="mx204">MX204 sample</button>
     </div>
   </header>
 
@@ -687,6 +688,55 @@ set interfaces ge-0/0/0 description wan_handoff
 set interfaces ge-0/0/0 unit 0 family inet address 203.0.113.2/30
 set protocols ospf area 0.0.0.0 interface ge-0/0/0.0
 set snmp community public authorization read-only`
+      },
+      mx204: {
+        platform: "juniper_mx204",
+        targetModel: "ex3400_24p",
+        stackMembers: 1,
+        text: `system {
+    host-name MX204-LAB-INET-EDGE-01;
+    services {
+        ssh {
+            protocol-version v2;
+        }
+        netconf {
+            ssh;
+        }
+    }
+}
+interfaces {
+    lo0 {
+        unit 0 {
+            family inet {
+                address 10.255.0.11/32;
+            }
+        }
+    }
+    xe-0/0/0 {
+        description "CORE-LINK-1";
+        unit 0 {
+            family inet {
+                address 198.51.100.11/31;
+            }
+            family mpls;
+        }
+    }
+}
+routing-options {
+    router-id 10.255.0.11;
+    autonomous-system 65011;
+}
+protocols {
+    bgp {
+        group TRANSIT-V4 {
+            type external;
+            peer-as 64496;
+            neighbor 203.0.113.1 {
+                description "TRANSIT-A-V4";
+            }
+        }
+    }
+}`
       }
     };
 

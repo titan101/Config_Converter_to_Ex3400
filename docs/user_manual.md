@@ -33,6 +33,8 @@ Config_Converter_to_Ex3400 is a local web app and CLI tool for converting legacy
 - Juniper EX4500
 - Juniper M7i
 - Juniper MX104
+- Juniper MX204
+- Juniper MX304
 - Ciena 3920/3930 SAOS
 - Auto-detect mode for common patterns
 
@@ -120,6 +122,7 @@ The sample buttons populate safe demo configs:
 - EX3200 sample
 - EX4200 sample
 - M7i sample
+- MX204 sample
 
 These are useful for verifying the app after install or demonstrating expected output.
 

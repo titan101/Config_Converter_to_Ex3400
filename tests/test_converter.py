@@ -203,3 +203,96 @@ def test_mx104_auto_detection():
     source = "set system host-name mx104-edge\nset chassis hardware-model mx104\n"
     result = convert_config(source, "auto", 1)
     assert result.platform == "juniper_mx104"
+
+
+def test_mx204_hierarchical_junos_config_flattens_and_converts():
+    source = """\ufeff
+system {
+    host-name MX204-LAB-INET-EDGE-01;
+    login {
+        user netops {
+            class super-user;
+        }
+    }
+    services {
+        ssh {
+            protocol-version v2;
+        }
+        netconf {
+            ssh;
+        }
+    }
+    name-server {
+        192.0.2.53;
+    }
+}
+interfaces {
+    lo0 {
+        unit 0 {
+            family inet {
+                address 10.255.0.11/32;
+            }
+        }
+    }
+    xe-0/0/0 {
+        description "CORE-LINK-1";
+        unit 0 {
+            family inet {
+                address 198.51.100.11/31;
+            }
+            family mpls;
+        }
+    }
+}
+snmp {
+    community LAB-RO {
+        authorization read-only;
+    }
+}
+routing-options {
+    router-id 10.255.0.11;
+    autonomous-system 65011;
+}
+policy-options {
+    prefix-list CUSTOMER-PREFIXES {
+        203.0.113.0/24;
+    }
+}
+protocols {
+    bgp {
+        group TRANSIT-V4 {
+            type external;
+            peer-as 64496;
+            neighbor 203.0.113.1 {
+                description "TRANSIT-A-V4";
+            }
+        }
+    }
+}
+firewall {
+    family inet {
+        filter PROTECT-RE {
+            term DEFAULT-DENY {
+                then discard;
+            }
+        }
+    }
+}
+"""
+    result = convert_config(source, "auto", 1)
+    assert result.platform == "juniper_mx204"
+    assert result.source_to_target_ports["xe-0/0/0"] == "ge-0/0/0"
+    assert "set system host-name MX204-LAB-INET-EDGE-01-EX3400" in result.config
+    assert "set system login user netops class super-user" in result.config
+    assert "set system services ssh protocol-version v2" in result.config
+    assert "set system name-server 192.0.2.53" in result.config
+    assert "set interfaces lo0 unit 0 family inet address 10.255.0.11/32" in result.config
+    assert "set interfaces ge-0/0/0 description \"CORE-LINK-1\"" in result.config
+    assert "set interfaces ge-0/0/0 unit 0 family inet address 198.51.100.11/31" in result.config
+    assert "set snmp community LAB-RO authorization read-only" in result.config
+    assert "set routing-options router-id 10.255.0.11" in result.config
+    assert "set routing-options autonomous-system 65011" in result.config
+    assert "set policy-options prefix-list CUSTOMER-PREFIXES 203.0.113.0/24" in result.config
+    assert "set protocols bgp group TRANSIT-V4 neighbor 203.0.113.1 description \"TRANSIT-A-V4\"" in result.config
+    assert "# REVIEW source Junos platform-specific command: set firewall family inet filter PROTECT-RE term DEFAULT-DENY then discard" in result.config
+    assert any("MX204" in warning for warning in result.warnings)

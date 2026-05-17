@@ -27,6 +27,8 @@ SUPPORTED_PLATFORMS = {
     "juniper_ex4500": "Juniper EX4500 legacy Junos",
     "juniper_m7i": "Juniper M7i Junos",
     "juniper_mx104": "Juniper MX104 Junos",
+    "juniper_mx204": "Juniper MX204 Junos",
+    "juniper_mx304": "Juniper MX304 Junos",
     "ciena": "Ciena 3920/3930 SAOS switch",
 }
 
@@ -35,6 +37,19 @@ TARGET_MODELS = {
     "ex3400_48": {"label": "EX3400-48 port", "ports_per_member": 48},
     "ex3400_24p_stack": {"label": "EX3400-24P stack", "ports_per_member": 24},
 }
+
+JUNOS_PLATFORMS = {
+    "juniper_ex3200",
+    "juniper_ex3300",
+    "juniper_ex4200",
+    "juniper_ex4500",
+    "juniper_m7i",
+    "juniper_mx104",
+    "juniper_mx204",
+    "juniper_mx304",
+}
+
+MX_PLATFORMS = {"juniper_mx104", "juniper_mx204", "juniper_mx304"}
 
 
 @dataclass
@@ -132,7 +147,7 @@ def convert_config(
         model = parse_checkpoint(raw_config, allocator, warnings)
     elif platform == "brocade":
         model = parse_brocade(raw_config, allocator, warnings)
-    elif platform in {"juniper_ex3200", "juniper_ex3300", "juniper_ex4200", "juniper_ex4500", "juniper_m7i", "juniper_mx104"}:
+    elif platform in JUNOS_PLATFORMS:
         model = parse_junos(raw_config, allocator, warnings, platform, target_model)
     elif platform == "ciena":
         model = parse_ciena(raw_config, allocator, warnings)
@@ -157,6 +172,10 @@ def detect_platform(raw_config: str) -> str:
         return "checkpoint"
     if re.search(r"^interface ve \d+|^vlan \d+ name|^\s*(tagged|untagged) ethe\b|^ip router-id\b", text, re.M):
         return "brocade"
+    if "mx304" in text or "mx-304" in text:
+        return "juniper_mx304"
+    if "mx204" in text or "mx-204" in text:
+        return "juniper_mx204"
     if "mx104" in text or "mx-104" in text:
         return "juniper_mx104"
     if "set system" in text or "set interfaces" in text:
@@ -164,6 +183,16 @@ def detect_platform(raw_config: str) -> str:
             return "juniper_ex3200"
         if re.search(r"\bset interfaces (so-|t1-|t3-|at-|fe-|ge-|xe-)", text) and "routing-options" in text:
             return "juniper_m7i"
+        return "juniper_ex3300"
+    if re.search(r"^\s*system\s*\{", text, re.M) and re.search(r"^\s*interfaces\s*\{", text, re.M):
+        if "mx304" in text:
+            return "juniper_mx304"
+        if "mx204" in text:
+            return "juniper_mx204"
+        if "mx104" in text:
+            return "juniper_mx104"
+        if "routing-options" in text or "protocols" in text:
+            return "juniper_mx204"
         return "juniper_ex3300"
     if "sup-bootflash" in text or "module provision" in text or "cat6500" in text:
         return "cisco_6500"
@@ -735,15 +764,33 @@ def parse_junos(
             parse_junos_vlan_line(stripped, model, legacy_vlan_l3)
         elif stripped.startswith("set interfaces "):
             parse_junos_interface_line(stripped, model, allocator, warnings, platform, target_model)
-        elif stripped.startswith("set routing-options static route "):
+        elif stripped.startswith((
+            "set routing-options static route ",
+            "set routing-options router-id ",
+            "set routing-options autonomous-system ",
+        )):
             model.extra_set_lines.append(stripped)
         elif stripped.startswith("set snmp "):
             model.extra_set_lines.append(stripped)
-        elif stripped.startswith(("set system ntp ", "set system syslog ", "set system login user ")):
+        elif stripped.startswith((
+            "set system services ",
+            "set system name-server ",
+            "set system ntp ",
+            "set system syslog ",
+            "set system login user ",
+            "set system time-zone ",
+        )):
             model.extra_set_lines.append(stripped)
         elif stripped.startswith(("set protocols ospf ", "set protocols bgp ", "set policy-options ")):
             model.extra_set_lines.append(stripped)
-        elif stripped.startswith(("set chassis ", "set forwarding-options ", "set class-of-service ")):
+        elif stripped.startswith((
+            "set chassis ",
+            "set forwarding-options ",
+            "set class-of-service ",
+            "set firewall ",
+            "set protocols mpls ",
+            "set protocols isis ",
+        )):
             model.review_comments.append(f"REVIEW source Junos platform-specific command: {stripped}")
 
     for vlan_name, l3_interface in legacy_vlan_l3.items():
@@ -755,8 +802,9 @@ def parse_junos(
 
     if platform == "juniper_m7i":
         warnings.append("M7i routing/MPLS, PIC, SONET, ATM, firewall filter, and service-provider features may not exist on an EX3400 and were preserved only when broadly compatible.")
-    if platform == "juniper_mx104":
-        warnings.append("MX104 routing/MPLS, subscriber, services, chassis, MIC/PIC, firewall filter, and service-provider features may not exist on an EX3400 and were preserved only when broadly compatible.")
+    if platform in MX_PLATFORMS:
+        mx_model = SUPPORTED_PLATFORMS.get(platform, "Juniper MX Junos")
+        warnings.append(f"{mx_model} routing/MPLS, subscriber, services, chassis, MIC/PIC, firewall filter, and service-provider features may not exist on an EX3400 and were preserved only when broadly compatible.")
     if platform == "juniper_ex4500":
         warnings.append("EX4500 physical xe-* ports were auto-assigned to EX3400 target ports. Verify optics, speed, and uplink/downlink roles.")
     return model
@@ -764,22 +812,22 @@ def parse_junos(
 
 def to_set_lines(raw_config: str) -> list[str]:
     if re.search(r"^\s*set\s+", raw_config, re.M):
-        return [line.strip() for line in raw_config.splitlines() if line.strip()]
+        return [line.strip().lstrip("\ufeff") for line in raw_config.splitlines() if line.strip()]
     return flatten_junos_hierarchy(raw_config)
 
 
 def flatten_junos_hierarchy(raw_config: str) -> list[str]:
     lines: list[str] = []
-    stack: list[str] = []
+    stack: list[list[str]] = []
     for original in raw_config.splitlines():
-        line = original.strip()
+        line = original.strip().lstrip("\ufeff")
         if not line or line.startswith(("#", "/*", "*")):
             continue
         line = line.split("/*", 1)[0].strip()
         if line.endswith("{"):
             token = line[:-1].strip()
             if token:
-                stack.extend(token.split())
+                stack.append(token.split())
             continue
         if line == "}" or line == "};":
             if stack:
@@ -788,7 +836,8 @@ def flatten_junos_hierarchy(raw_config: str) -> list[str]:
         if line.endswith(";"):
             command = line[:-1].strip()
             if command:
-                lines.append("set " + " ".join(stack + command.split()))
+                prefix = [part for group in stack for part in group]
+                lines.append("set " + " ".join(prefix + command.split()))
     return lines
 
 
@@ -851,8 +900,10 @@ def parse_junos_interface_line(
         model.extra_set_lines.append(translated.replace("set interfaces vlan unit", "set interfaces irb unit"))
     else:
         model.review_comments.append(f"REVIEW source Junos interface command: {line}")
-        if platform in {"juniper_m7i", "juniper_mx104", "juniper_ex4500"} and source != target:
-            warnings.append(f"Mapped {source} to {target}; verify optics, speed, and port role.")
+        if platform in {"juniper_m7i", "juniper_ex4500", *MX_PLATFORMS} and source != target:
+            warning = f"Mapped {source} to {target}; verify optics, speed, and port role."
+            if warning not in warnings:
+                warnings.append(warning)
 
 
 def is_physical_interface(name: str) -> bool:
@@ -860,7 +911,7 @@ def is_physical_interface(name: str) -> bool:
 
 
 def map_junos_physical_interface(source: str, allocator: PortAllocator, platform: str, target_model: str) -> str:
-    if platform in {"juniper_m7i", "juniper_mx104", "juniper_ex4500"}:
+    if platform in {"juniper_m7i", "juniper_ex4500", *MX_PLATFORMS}:
         return allocator.get(source)
     if platform == "juniper_ex4200":
         match = re.match(r"^(ge|xe|fe)-(\d+)/(\d+)/(\d+)$", source)
