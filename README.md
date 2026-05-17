@@ -33,6 +33,14 @@ http://127.0.0.1:5050
 From the project directory:
 
 ```bash
+chmod +x install_wsl_prereqs.sh run_wsl.sh
+./install_wsl_prereqs.sh
+./run_wsl.sh
+```
+
+If your WSL already has `python3-pip` and `python3-venv`, you can skip the prerequisite step:
+
+```bash
 chmod +x run_wsl.sh
 ./run_wsl.sh
 ```
@@ -42,6 +50,8 @@ Then open:
 ```text
 http://127.0.0.1:5050
 ```
+
+The WSL launcher binds the app to `0.0.0.0` inside WSL so it is reachable from the Windows browser at `http://127.0.0.1:5050`.
 
 If your WSL environment does not support Python virtual environments, use:
 
