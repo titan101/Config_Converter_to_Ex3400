@@ -2,6 +2,8 @@
 
 Local Python app for converting pasted legacy network configurations into Juniper EX3400 Junos `set` commands.
 
+Full documentation with screenshots: [docs/user_manual.md](docs/user_manual.md)
+
 ## Run
 
 ### Windows
