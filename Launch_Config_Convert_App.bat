@@ -9,13 +9,19 @@ echo EX3400 Config Converter App
 echo ========================================
 echo.
 
-where python >nul 2>nul
-if errorlevel 1 (
-    echo Python was not found in PATH.
-    echo Install Python or add it to PATH, then run this launcher again.
-    echo.
-    pause
-    exit /b 1
+if not exist ".venv" (
+    echo Creating local virtual environment...
+    py -3 -m venv .venv >nul 2>nul
+    if errorlevel 1 (
+        python -m venv .venv
+    )
+    if errorlevel 1 (
+        echo Could not create .venv.
+        echo Install Python 3 with venv support, then run this launcher again.
+        echo.
+        pause
+        exit /b 1
+    )
 )
 
 echo Checking if the app is already running...
@@ -30,7 +36,15 @@ if not errorlevel 1 (
 )
 
 echo Checking Python dependencies...
-python -m pip install -r requirements.txt
+".venv\Scripts\python.exe" -m pip install --upgrade pip
+if errorlevel 1 (
+    echo.
+    echo Pip upgrade failed.
+    echo.
+    pause
+    exit /b 1
+)
+".venv\Scripts\python.exe" -m pip install -r requirements.txt
 if errorlevel 1 (
     echo.
     echo Dependency install failed.
@@ -49,7 +63,7 @@ echo.
 
 set CONFIG_CONVERT_OPEN_BROWSER=1
 set CONFIG_CONVERT_PORT=5050
-python app.py
+".venv\Scripts\python.exe" app.py
 
 echo.
 echo App stopped.

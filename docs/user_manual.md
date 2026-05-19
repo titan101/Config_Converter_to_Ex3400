@@ -55,8 +55,9 @@ The target model affects automatic port assignment. For example, EX4200 port `ge
 Manual Windows run:
 
 ```powershell
-python -m pip install -r requirements.txt
-python app.py
+py -3 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe app.py
 ```
 
 ## Install And Run On WSL / Linux
@@ -64,9 +65,8 @@ python app.py
 From the project directory:
 
 ```bash
-chmod +x install_wsl_prereqs.sh run_wsl.sh
-./install_wsl_prereqs.sh
-./run_wsl.sh
+chmod +x run.sh run_server.sh
+./run.sh
 ```
 
 Then open this from Windows or Linux:
@@ -75,18 +75,27 @@ Then open this from Windows or Linux:
 http://127.0.0.1:5050
 ```
 
-If prerequisites are already installed:
+For a shared Linux server workspace:
 
 ```bash
-chmod +x run_wsl.sh
-./run_wsl.sh
+./run_server.sh
 ```
 
-If virtual environments are not available and you intentionally want to use the user/global Python environment:
+Then open:
+
+```text
+http://SERVER_IP:5050
+```
+
+The launchers create a local `.venv` folder, install requirements into that folder, and run the app from there. No sudo/admin rights are needed unless the server is missing Python or the Python `venv` module.
+
+`run_wsl.sh` is still available for older habits and simply calls `run.sh`.
+
+If you do have admin rights and your Ubuntu/WSL machine is missing Python prerequisites:
 
 ```bash
-chmod +x run_wsl_no_venv.sh
-./run_wsl_no_venv.sh
+chmod +x install_wsl_prereqs.sh
+./install_wsl_prereqs.sh
 ```
 
 ## Run With Docker
@@ -307,18 +316,20 @@ curl -X POST http://127.0.0.1:5050/api/validate \
 
 ### WSL says `python3-venv` or `pip` is missing
 
-Run:
+If you have sudo/admin rights, run:
 
 ```bash
 ./install_wsl_prereqs.sh
 ```
 
+If you are just a normal user on a work server, ask the server admin for Python 3 with the `venv` module enabled.
+
 ### Browser cannot reach the app from Windows when running in WSL
 
-The WSL launcher binds to `0.0.0.0` and prints:
+The server launcher binds to `0.0.0.0` and prints:
 
 ```text
-Open: http://127.0.0.1:5050
+Server URL: http://SERVER_IP:5050
 ```
 
 If it still fails, check whether another app is using port `5050`.
@@ -328,7 +339,7 @@ If it still fails, check whether another app is using port `5050`.
 Run with a different port:
 
 ```bash
-CONFIG_CONVERT_PORT=5051 ./run_wsl.sh
+CONFIG_CONVERT_PORT=5051 ./run_server.sh
 ```
 
 Then open:
@@ -366,7 +377,7 @@ python -m pytest
 Compile check:
 
 ```bash
-python -m py_compile app.py converter.py services.py
+python -m compileall app.py converter.py services.py wsgi.py
 ```
 
 GitHub Actions runs tests and compile checks automatically on push and pull request.

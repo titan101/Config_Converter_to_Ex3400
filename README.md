@@ -6,7 +6,32 @@ Full documentation with screenshots: [docs/user_manual.md](docs/user_manual.md)
 
 For Juniper devices, paste `show configuration | display set` output when possible. Hierarchical Junos input is accepted as a fallback, but the app will warn that `set` commands produce better conversions.
 
-## Run
+## Beginner Quick Start
+
+You do not need admin rights for the normal launcher. Each launcher creates a local `.venv` folder inside this project and installs the Python requirements there.
+
+### Linux Server Or WSL
+
+```bash
+git clone https://github.com/titan101/Config_Converter_to_Ex3400.git
+cd Config_Converter_to_Ex3400
+chmod +x run.sh run_server.sh
+./run_server.sh
+```
+
+Open:
+
+```text
+http://SERVER_IP:5050
+```
+
+For a laptop-only run that listens only on your machine:
+
+```bash
+./run.sh
+```
+
+Open `http://127.0.0.1:5050`.
 
 ### Windows
 
@@ -16,68 +41,57 @@ Double-click:
 Launch_Config_Convert_App.bat
 ```
 
-The launcher checks dependencies, starts the local server, and opens the browser.
+The launcher creates `.venv`, installs requirements, starts the local server, and opens the browser.
 
-Manual run:
+## Run Details
 
-```powershell
-cd path\to\Config_Converter_to_Ex3400
-python -m pip install -r requirements.txt
-python app.py
-```
+### Linux Server Options
 
-Open:
-
-```text
-http://127.0.0.1:5050
-```
-
-### WSL / Linux
-
-From the project directory:
+The server launcher binds to all interfaces and uses Waitress instead of Flask's development server:
 
 ```bash
-chmod +x install_wsl_prereqs.sh run_wsl.sh
-./install_wsl_prereqs.sh
-./run_wsl.sh
+CONFIG_CONVERT_PORT=8080 ./run_server.sh
 ```
 
-If your WSL already has `python3-pip` and `python3-venv`, you can skip the prerequisite step:
-
-```bash
-chmod +x run_wsl.sh
-./run_wsl.sh
-```
-
-Then open:
-
-```text
-http://127.0.0.1:5050
-```
-
-The WSL launcher binds the app to `0.0.0.0` inside WSL so it is reachable from the Windows browser at `http://127.0.0.1:5050`.
-
-If your WSL environment does not support Python virtual environments, use:
-
-```bash
-chmod +x run_wsl_no_venv.sh
-./run_wsl_no_venv.sh
-```
-
-Manual WSL run:
+Manual venv run:
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate
+. .venv/bin/activate
 python -m pip install -r requirements.txt
-python app.py
+CONFIG_CONVERT_HOST=0.0.0.0 CONFIG_CONVERT_PRODUCTION=1 python app.py
 ```
+
+### WSL Compatibility
+
+`run_wsl.sh` is kept for older notes and now calls `run.sh`.
+
+If Python cannot create `.venv`, ask your server admin for Python venv support. On Ubuntu that package is usually `python3-venv`.
 
 Docker run:
 
 ```bash
 docker compose up --build
 ```
+
+## Standard Project Layout
+
+- `app.py`: Flask routes, API endpoints, and app startup.
+- `converter.py`: conversion rules and platform parsing.
+- `services.py`: report, export, batch, and packaging helpers.
+- `templates/index.html`: web UI.
+- `tests/`: pytest coverage for conversion and app features.
+- `run.sh`: local Linux/WSL launcher using `.venv`.
+- `run_server.sh`: Linux server launcher using `.venv`, `0.0.0.0`, and Waitress.
+- `Launch_Config_Convert_App.bat`: Windows launcher using `.venv`.
+- `RELEASES.md`: running change notes.
+
+## What Was Updated
+
+- The Linux/server launch path is now the same pattern used by the other network tools.
+- All normal launchers install dependencies into a project-local `.venv`.
+- Shared-server runs can use Waitress with `./run_server.sh`.
+- The old non-venv WSL launcher was removed so dependencies do not spill into user/global Python.
 
 ## App Features
 

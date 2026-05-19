@@ -232,7 +232,13 @@ from services import (  # noqa: E402,F401
 if __name__ == "__main__":
     host = os.environ.get("CONFIG_CONVERT_HOST", "127.0.0.1")
     port = int(os.environ.get("CONFIG_CONVERT_PORT", "5050"))
+    production = os.environ.get("CONFIG_CONVERT_PRODUCTION", "0").lower() in {"1", "true", "yes", "on"}
     url = f"http://{host}:{port}/?theme=dark"
     if os.environ.get("CONFIG_CONVERT_OPEN_BROWSER") == "1":
         threading.Thread(target=open_browser_later, args=(url,), daemon=True).start()
-    app.run(host=host, port=port, debug=False, use_reloader=False)
+    if production:
+        from waitress import serve
+
+        serve(app, host=host, port=port)
+    else:
+        app.run(host=host, port=port, debug=False, use_reloader=False)
